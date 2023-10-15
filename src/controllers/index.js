@@ -1,12 +1,7 @@
 const { user, product } = require("../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
 const fs = require("fs");
-
-const welcome = (req, res) => {
-  res.status(200).send({ message: "welcome....!" });
-};
 
 const createUser = async (req, res) => {
   try {
@@ -21,11 +16,22 @@ const createUser = async (req, res) => {
     });
     await buildUser.save();
 
-    res.status(200).send({ message: "User has been created...!" });
+    res.status(200).send({ message: `${username} has been created...!` });
   } catch (error) {
     return res
       .status(400)
       .send({ message: `error on create user - ${error.message}` });
+  }
+};
+
+const getAllUser = async (req, res) => {
+  try {
+    const allUser = await user.findAll();
+    // if (allUser == [])
+    //   return res.status(400).send({ message: "user is empty...!" });
+    return res.status(200).send({ users: allUser });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
   }
 };
 
@@ -51,6 +57,7 @@ const delUser = async (req, res) => {
 
 const login = async (req, res) => {
   try {
+    console.log(req);
     const currentUser = req.body.username;
     const token = jwt.sign({ username: currentUser }, process.env.JWT_SECRET, {
       expiresIn: 100,
@@ -70,7 +77,10 @@ const login = async (req, res) => {
 
 const addProduct = async (req, res) => {
   try {
+    console.log(req);
     const { name, price, image, description } = req.body;
+    if (!(req.currentUser.toLowerCase() == "admin"))
+      return res.status(500).send({ message: "access denial...!" });
     await product.create({
       name: name,
       price: price,
@@ -94,11 +104,45 @@ const getProducts = async (req, res) => {
   }
 };
 
+const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const productById = await product.findOne({ where: { id: id } });
+
+    if (!productById)
+      return res.status(404).send({ message: "product is not fount..,!" });
+    return res.status(200).send({ product: productById });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
+const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, price, image, description } = req.body;
+    await product.update(
+      {
+        name: name,
+        price: price,
+        image: image,
+        description: description,
+      },
+      { where: { id: id } }
+    );
+    return res.status(200).send({ message: "update...!" });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
 module.exports = {
-  welcome,
   createUser,
+  getAllUser,
   delUser,
   login,
   addProduct,
   getProducts,
+  getProductById,
+  updateProduct,
 };
