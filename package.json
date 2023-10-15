@@ -15,10 +15,13 @@
   "author": "bahe",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.6.2",
-    "sequelize": "^6.6.5"
+    "sequelize": "^6.6.5",
+    "validator": "^13.11.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1",
