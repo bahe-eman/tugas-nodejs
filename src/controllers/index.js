@@ -38,11 +38,6 @@ const getAllUser = async (req, res) => {
 const delUser = async (req, res) => {
   try {
     const { username } = req.body;
-    const isTrue = await user.findOne({
-      where: { username: username },
-    });
-    if (!isTrue)
-      return res.status(404).send({ message: `${username} is not found...!` });
     await user.destroy({
       where: { username: username },
     });
@@ -77,10 +72,7 @@ const login = async (req, res) => {
 
 const addProduct = async (req, res) => {
   try {
-    console.log(req);
     const { name, price, image, description } = req.body;
-    if (!(req.currentUser.toLowerCase() == "admin"))
-      return res.status(500).send({ message: "access denial...!" });
     await product.create({
       name: name,
       price: price,
@@ -108,7 +100,6 @@ const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
     const productById = await product.findOne({ where: { id: id } });
-
     if (!productById)
       return res.status(404).send({ message: "product is not fount..,!" });
     return res.status(200).send({ product: productById });
@@ -119,7 +110,6 @@ const getProductById = async (req, res) => {
 
 const updateProduct = async (req, res) => {
   try {
-    const { id } = req.params;
     const { name, price, image, description } = req.body;
     await product.update(
       {
@@ -128,9 +118,21 @@ const updateProduct = async (req, res) => {
         image: image,
         description: description,
       },
-      { where: { id: id } }
+      { where: { id: req.idProduct } }
     );
     return res.status(200).send({ message: "update...!" });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    await user.update(
+      { username: req.body.username },
+      { where: { username: req.params.username } }
+    );
+    return res.status(200).send({ message: "updated username...!" });
   } catch (error) {
     return res.status(500).send({ message: error.message });
   }
@@ -145,4 +147,5 @@ module.exports = {
   getProducts,
   getProductById,
   updateProduct,
+  updateUser,
 };

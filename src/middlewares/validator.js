@@ -39,6 +39,8 @@ const validateCreateUser = async (req, res, next) => {
 const validateAddProduct = async (req, res, next) => {
   try {
     const { name, price, image, description } = req.body;
+    if (!(req.currentUser.toLowerCase() == "admin"))
+      return res.status(500).send({ message: "access denial...!" });
     if (!name || !price || !image || !description)
       return res.status(401).send({ message: "some field is missing...!" });
 
@@ -77,4 +79,67 @@ const validateLogin = async (req, res, next) => {
   }
 };
 
-module.exports = { validateCreateUser, validateLogin, validateAddProduct };
+const validateUpdatePoduct = async (req, res, next) => {
+  try {
+    const { name, price, image, description } = req.body;
+    const { id } = req.params;
+    if (!(req.currentUser.toLowerCase() == "admin"))
+      return res.status(500).send({ message: "access denial...!" });
+    if (!name || !price || !image || !description)
+      return res.status(401).send({ message: "some field is missing...!" });
+    if (!(await product.findOne({ where: { id: id } })))
+      return res.status(400).send({ message: `product is not found...!` });
+    if (await product.findOne({ where: { name: name } }))
+      return res.status(400).send({ message: `${name} has used...!` });
+
+    req.idProduct = id;
+    next();
+  } catch (error) {
+    return res
+      .status(500)
+      .send({ message: `error on validate - ${error.message}` });
+  }
+};
+
+const validateDelUser = async (req, res, next) => {
+  try {
+    const { username } = req.body;
+    if (!(req.currentUser.toLowerCase() == "admin"))
+      return res.status(500).send({ message: "access denial...!" });
+    const isTrue = await user.findOne({
+      where: { username: username },
+    });
+    if (!isTrue)
+      return res.status(404).send({ message: `${username} is not found...!` });
+
+    next();
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
+const validateUpdateUser = async (req, res, next) => {
+  try {
+    if (!(req.currentUser.toLowerCase() == "admin"))
+      return res.status(500).send({ message: "access denial...!" });
+    if (
+      req.params.username.toLowerCase() == "admin" ||
+      req.body.username.toLowerCase() == "admin"
+    )
+      return res.status(401).send({
+        message: "cant change username: admin...!",
+      });
+    next();
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
+module.exports = {
+  validateCreateUser,
+  validateLogin,
+  validateAddProduct,
+  validateUpdatePoduct,
+  validateDelUser,
+  validateUpdateUser,
+};
