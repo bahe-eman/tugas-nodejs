@@ -2,8 +2,33 @@ const bcrypt = require("bcrypt");
 const validator = require("validator");
 const { user, product } = require("../models");
 
+const validateLogin = async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password)
+      return res.status(400).send({ message: "some field is missing...!" });
+    const getUser = await user.findOne({ where: { username: username } });
+    if (!getUser)
+      return res.status(404).send({ message: `${username} is not found ...!` });
+    const isValidPasswor = bcrypt.compareSync(
+      password,
+      getUser.dataValues.password
+    );
+    if (!isValidPasswor)
+      return res.status(400).send({ message: "invalid password...!" });
+
+    // res.dataUser = getUser.dataValues;
+    next();
+  } catch (error) {
+    return res
+      .status(500)
+      .send({ message: `error on validation - ${error.message}` });
+  }
+};
+
 const validateCreateUser = async (req, res, next) => {
   try {
+    console.log(req);
     const { firstname, email, username, password } = req.body;
 
     if (!firstname || !email || !username || !password)
@@ -39,8 +64,10 @@ const validateCreateUser = async (req, res, next) => {
 const validateAddProduct = async (req, res, next) => {
   try {
     const { name, price, image, description } = req.body;
-    if (!(req.currentUser.toLowerCase() == "admin"))
-      return res.status(500).send({ message: "access denial...!" });
+    if (!(req.currenRole.toLowerCase() == "admin"))
+      return res
+        .status(500)
+        .send({ message: "access denial, you are not admin...!" });
     if (!name || !price || !image || !description)
       return res.status(401).send({ message: "some field is missing...!" });
 
@@ -54,37 +81,14 @@ const validateAddProduct = async (req, res, next) => {
   }
 };
 
-const validateLogin = async (req, res, next) => {
-  try {
-    const { username, password } = req.body;
-    if (!username || !password)
-      return res.status(400).send({ message: "some field is missing...!" });
-    const getUser = await user.findOne({ where: { username: username } });
-    if (!getUser)
-      return res.status(404).send({ message: `${username} is not found ...!` });
-
-    const isValidPasswor = bcrypt.compareSync(
-      password,
-      getUser.dataValues.password
-    );
-    if (!isValidPasswor)
-      return res.status(400).send({ message: "invalid password...!" });
-
-    res.dataUser = getUser.dataValues;
-    next();
-  } catch (error) {
-    return res
-      .status(500)
-      .send({ message: `error on validation - ${error.message}` });
-  }
-};
-
 const validateUpdatePoduct = async (req, res, next) => {
   try {
     const { name, price, image, description } = req.body;
     const { id } = req.params;
-    if (!(req.currentUser.toLowerCase() == "admin"))
-      return res.status(500).send({ message: "access denial...!" });
+    if (!(req.currenRole.toLowerCase() == "admin"))
+      return res
+        .status(500)
+        .send({ message: "access denial, you are not admin...!" });
     if (!name || !price || !image || !description)
       return res.status(401).send({ message: "some field is missing...!" });
     if (!(await product.findOne({ where: { id: id } })))
@@ -104,8 +108,10 @@ const validateUpdatePoduct = async (req, res, next) => {
 const validateDelUser = async (req, res, next) => {
   try {
     const { username } = req.body;
-    if (!(req.currentUser.toLowerCase() == "admin"))
-      return res.status(500).send({ message: "access denial...!" });
+    if (!(req.currenRole.toLowerCase() == "admin"))
+      return res
+        .status(500)
+        .send({ message: "access denial, you are not admin...!" });
     const isTrue = await user.findOne({
       where: { username: username },
     });
@@ -120,8 +126,10 @@ const validateDelUser = async (req, res, next) => {
 
 const validateUpdateUser = async (req, res, next) => {
   try {
-    if (!(req.currentUser.toLowerCase() == "admin"))
-      return res.status(500).send({ message: "access denial...!" });
+    if (!(req.currenRole.toLowerCase() == "admin"))
+      return res
+        .status(500)
+        .send({ message: "access denial, you are not admin...!" });
     if (
       req.params.username.toLowerCase() == "admin" ||
       req.body.username.toLowerCase() == "admin"

@@ -3,9 +3,28 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
 
+const login = async (req, res) => {
+  try {
+    const currenRole = req.body.username;
+    const token = jwt.sign({ username: currenRole }, process.env.JWT_SECRET, {
+      expiresIn: 100,
+    });
+    fs.writeFileSync("src/token/token.txt", token);
+    fs.writeFileSync("src/token/current-role.txt", currenRole);
+
+    return res.status(200).send({
+      message: "login succes...!",
+      "current role": currenRole,
+      token: token,
+    });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
 const createUser = async (req, res) => {
   try {
-    const { firstname, lastname, email, username, password } = req.body;
+    const { firstname, lastname, email, username, password, role } = req.body;
     const hashedPassword = bcrypt.hashSync(password, 8);
     const buildUser = user.build({
       firstname: firstname,
@@ -13,6 +32,7 @@ const createUser = async (req, res) => {
       email: email,
       username: username,
       password: hashedPassword,
+      role: role,
     });
     await buildUser.save();
 
@@ -26,10 +46,24 @@ const createUser = async (req, res) => {
 
 const getAllUser = async (req, res) => {
   try {
+    if (!(req.currenRole.toLowerCase() == "admin"))
+      return res
+        .status(500)
+        .send({ message: "access denial, you are not admin...!" });
     const allUser = await user.findAll();
-    // if (allUser == [])
-    //   return res.status(400).send({ message: "user is empty...!" });
     return res.status(200).send({ users: allUser });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    await user.update(
+      { username: req.body.username },
+      { where: { username: req.params.username } }
+    );
+    return res.status(200).send({ message: "updated username...!" });
   } catch (error) {
     return res.status(500).send({ message: error.message });
   }
@@ -37,38 +71,19 @@ const getAllUser = async (req, res) => {
 
 const delUser = async (req, res) => {
   try {
-    const { username } = req.body;
     await user.destroy({
-      where: { username: username },
+      where: { username: req.body.username },
     });
 
     return res
       .status(200)
-      .send({ message: `${username} has been deleted...!` });
+      .send({ message: `${req.body.username} has been deleted...!` });
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 };
 
-const login = async (req, res) => {
-  try {
-    console.log(req);
-    const currentUser = req.body.username;
-    const token = jwt.sign({ username: currentUser }, process.env.JWT_SECRET, {
-      expiresIn: 100,
-    });
-    fs.writeFileSync("src/token/token.txt", token);
-    fs.writeFileSync("src/token/current-user.txt", currentUser);
-
-    return res.status(200).send({
-      message: "login succes...!",
-      "current user": currentUser,
-      token: token,
-    });
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
+// ---------------------------------------------------------------------------------------------------------
 
 const addProduct = async (req, res) => {
   try {
@@ -126,26 +141,14 @@ const updateProduct = async (req, res) => {
   }
 };
 
-const updateUser = async (req, res) => {
-  try {
-    await user.update(
-      { username: req.body.username },
-      { where: { username: req.params.username } }
-    );
-    return res.status(200).send({ message: "updated username...!" });
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
-
 module.exports = {
+  login,
   createUser,
   getAllUser,
+  updateUser,
   delUser,
-  login,
   addProduct,
   getProducts,
   getProductById,
   updateProduct,
-  updateUser,
 };
