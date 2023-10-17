@@ -219,8 +219,26 @@ const validateOrderProduct = async (req, res, next) => {
     if (!name)
       return res.status(401).send({ message: "some field is missing...!" });
 
+    if (quantity == 0)
+      return res.status(401).send({ message: `order canceling...!` });
+
     if (!(await product.findOne({ where: { name: name } })))
       return res.status(400).send({ message: "product not found...!" });
+
+    const getOrder = await order.findOne({ where: { name: name } });
+
+    if (!getOrder) {
+      await order.create({
+        name: name,
+        quantity: quantity,
+      });
+    } else
+      await order.update(
+        {
+          quantity: quantity + getOrder.dataValues.quantity,
+        },
+        { where: { name: name } }
+      );
 
     next();
   } catch (error) {

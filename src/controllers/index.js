@@ -188,14 +188,11 @@ const delProduct = async (req, res) => {
 
 // ------------------------------------------------------------------------------
 
-const orderProduct = async (req, res) => {
+const orderProduct = (req, res) => {
   try {
-    const { name, quantity } = req.body;
-    await order.create({
-      name: name,
-      quantity: quantity + 10,
-    });
-    return res.status(200).send({ message: `${name} has been order...!` });
+    return res
+      .status(200)
+      .send({ message: `${req.body.name} has been order...!` });
   } catch (error) {
     return res.status(500).send({ message: error.message });
   }
