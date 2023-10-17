@@ -46,12 +46,19 @@ const createUser = async (req, res) => {
 
 const getAllUser = async (req, res) => {
   try {
-    if (!(req.currenRole.toLowerCase() == "admin"))
-      return res
-        .status(500)
-        .send({ message: "access denial, you are not admin...!" });
     const allUser = await user.findAll();
     return res.status(200).send({ users: allUser });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
+const getByUsername = async (req, res) => {
+  try {
+    const result = await user.findOne({
+      where: { username: req.params.username },
+    });
+    return res.status(200).send({ product: result });
   } catch (error) {
     return res.status(500).send({ message: error.message });
   }
@@ -141,14 +148,26 @@ const updateProduct = async (req, res) => {
   }
 };
 
+const delProduct = async (req, res) => {
+  try {
+    await product.destroy({
+      where: { name: req.body.name },
+    });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
 module.exports = {
   login,
   createUser,
   getAllUser,
+  getByUsername,
   updateUser,
   delUser,
   addProduct,
   getProducts,
   getProductById,
   updateProduct,
+  delProduct,
 };

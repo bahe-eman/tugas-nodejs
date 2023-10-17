@@ -28,7 +28,10 @@ const validateLogin = async (req, res, next) => {
 
 const validateCreateUser = async (req, res, next) => {
   try {
-    console.log(req);
+    if (!(req.currenRole.toLowerCase() == "admin"))
+      return res
+        .status(500)
+        .send({ message: "access denial, you are not admin...!" });
     const { firstname, email, username, password } = req.body;
 
     if (!firstname || !email || !username || !password)
@@ -58,6 +61,25 @@ const validateCreateUser = async (req, res, next) => {
     return res
       .status(500)
       .send({ message: `error validation - ${error.message}` });
+  }
+};
+
+const validateUpdateUser = async (req, res, next) => {
+  try {
+    if (!(req.currenRole.toLowerCase() == "admin"))
+      return res
+        .status(500)
+        .send({ message: "access denial, you are not admin...!" });
+    if (
+      req.params.username.toLowerCase() == "admin" ||
+      req.body.username.toLowerCase() == "admin"
+    )
+      return res.status(401).send({
+        message: "cant change username: admin...!",
+      });
+    next();
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
   }
 };
 
@@ -118,25 +140,6 @@ const validateDelUser = async (req, res, next) => {
     if (!isTrue)
       return res.status(404).send({ message: `${username} is not found...!` });
 
-    next();
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
-};
-
-const validateUpdateUser = async (req, res, next) => {
-  try {
-    if (!(req.currenRole.toLowerCase() == "admin"))
-      return res
-        .status(500)
-        .send({ message: "access denial, you are not admin...!" });
-    if (
-      req.params.username.toLowerCase() == "admin" ||
-      req.body.username.toLowerCase() == "admin"
-    )
-      return res.status(401).send({
-        message: "cant change username: admin...!",
-      });
     next();
   } catch (error) {
     return res.status(500).send({ message: error.message });

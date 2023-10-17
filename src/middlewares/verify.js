@@ -8,11 +8,12 @@ const verifyToken = async (req, res, next) => {
     if (!(await user.findOne({ where: { username: "admin" } }))) {
       await user.create({
         firstname: "administrator",
-        email: "admin@gmail.com",
+        email: "admin@admin.com",
         username: "admin",
         password: bcrypt.hashSync("Admin@12345", 8),
         role: "admin",
       });
+      console.log("admin success created...!");
     }
     const token = fs.readFileSync("src/token/token.txt", "utf-8");
     jwt.verify(token, process.env.JWT_SECRET);

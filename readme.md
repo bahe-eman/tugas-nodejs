@@ -13,5 +13,5 @@
 
 ### nonAdmin can do:
 
-- create user (sebab ini adalah latihan)
+- get user
 - get product

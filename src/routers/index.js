@@ -4,12 +4,14 @@ const {
   login,
   createUser,
   getAllUser,
+  getByUsername,
   delUser,
+  updateUser,
   addProduct,
   getProducts,
   getProductById,
   updateProduct,
-  updateUser,
+  delProduct,
 } = require("../controllers");
 const {
   validateLogin,
@@ -24,7 +26,8 @@ const router = express.Router();
 
 router.post("/login", validateLogin, login);
 router.post("/create-user", verifyToken, validateCreateUser, createUser);
-router.get("/get-users", verifyToken, getAllUser);
+router.get("/users", verifyToken, getAllUser);
+router.get("/user/:username", verifyToken, getByUsername);
 router.delete("/delete-user", verifyToken, validateDelUser, delUser);
 router.put(
   "/update-user/:username",
@@ -34,8 +37,9 @@ router.put(
 );
 // ---------------------------------------------------------------------------------------
 router.post("/add-product", verifyToken, validateAddProduct, addProduct);
-router.get("/get-products", getProducts);
-router.get("/:id", getProductById);
+router.get("/products", verifyToken, getProducts);
+router.get("/product/:id", verifyToken, getProductById);
+router.delete("/del-product/delProduct");
 router.put(
   "/update-product/:id",
   verifyToken,
