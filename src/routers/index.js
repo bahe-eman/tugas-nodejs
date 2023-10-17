@@ -2,6 +2,7 @@ const express = require("express");
 
 const {
   login,
+  sigout,
   createUser,
   getAllUser,
   getByUsername,
@@ -12,39 +13,50 @@ const {
   getProductById,
   updateProduct,
   delProduct,
+  orderProduct,
 } = require("../controllers");
 const {
   validateLogin,
   validateCreateUser,
   validateAddProduct,
   validateUpdatePoduct,
-  validateDelUser,
+  validateDeleteUser,
   validateUpdateUser,
+  validateDeleteProduct,
+  validateOrderProduct,
 } = require("../middlewares/validator");
 const { verifyToken } = require("../middlewares/verify");
 const router = express.Router();
 
 router.post("/login", validateLogin, login);
-router.post("/create-user", verifyToken, validateCreateUser, createUser);
+router.delete("/sigout", sigout);
+router.post("/user/create", verifyToken, validateCreateUser, createUser);
 router.get("/users", verifyToken, getAllUser);
 router.get("/user/:username", verifyToken, getByUsername);
-router.delete("/delete-user", verifyToken, validateDelUser, delUser);
+router.delete("/user/delete", verifyToken, validateDeleteUser, delUser);
 router.put(
-  "/update-user/:username",
+  "/user/update/:username",
   verifyToken,
   validateUpdateUser,
   updateUser
 );
 // ---------------------------------------------------------------------------------------
-router.post("/add-product", verifyToken, validateAddProduct, addProduct);
-router.get("/products", verifyToken, getProducts);
-router.get("/product/:id", verifyToken, getProductById);
-router.delete("/del-product/delProduct");
+router.post("/product/add", verifyToken, validateAddProduct, addProduct);
+router.get("/products", getProducts);
+router.get("/product/:id", getProductById);
+router.delete(
+  "/product/delete",
+  verifyToken,
+  validateDeleteProduct,
+  delProduct
+);
 router.put(
-  "/update-product/:id",
+  "/product/update/:id",
   verifyToken,
   validateUpdatePoduct,
   updateProduct
 );
+// ---------------------------------------
+router.post("/order", verifyToken, validateOrderProduct, orderProduct);
 
 module.exports = router;

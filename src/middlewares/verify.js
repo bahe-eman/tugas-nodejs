@@ -15,14 +15,21 @@ const verifyToken = async (req, res, next) => {
       });
       console.log("admin success created...!");
     }
-    const token = fs.readFileSync("src/token/token.txt", "utf-8");
+    const token = fs.readFileSync("src/current-active/token.txt", "utf-8");
     jwt.verify(token, process.env.JWT_SECRET);
-    req.currenRole = fs.readFileSync("src/token/current-role.txt", "utf-8");
-    req.currenToken = fs.readFileSync("src/token/token.txt", "utf-8");
+
+    req.currenToken = fs.readFileSync("src/current-active/token.txt", "utf-8");
+    req.currenRole = fs.readFileSync("src/current-active/role.txt", "utf-8");
+    req.currenEmail = fs.readFileSync("src/current-active/email.txt", "utf-8");
+    req.currenUsername = fs.readFileSync(
+      "src/current-active/username.txt",
+      "utf-8"
+    );
+
     next();
   } catch (error) {
     return res.status(500).send({
-      message: `error on verify token, token not found - ${error.message}`,
+      message: `you are not sigin, please sigin...!`,
     });
   }
 };

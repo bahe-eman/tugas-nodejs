@@ -1,22 +1,39 @@
-const { user, product } = require("../models");
+const { user, product, order } = require("../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
 
 const login = async (req, res) => {
   try {
-    const currenRole = req.body.username;
-    const token = jwt.sign({ username: currenRole }, process.env.JWT_SECRET, {
-      expiresIn: 100,
-    });
-    fs.writeFileSync("src/token/token.txt", token);
-    fs.writeFileSync("src/token/current-role.txt", currenRole);
+    delete req.dataUser.password;
+    const token = jwt.sign(
+      { username: req.body.username },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: 1800,
+      }
+    );
+    fs.writeFileSync("src/current-active/token.txt", token);
+    fs.writeFileSync("src/current-active/role.txt", req.dataUser.role);
+    fs.writeFileSync("src/current-active/email.txt", req.dataUser.email);
+    fs.writeFileSync("src/current-active/username.txt", req.dataUser.username);
 
     return res.status(200).send({
       message: "login succes...!",
-      "current role": currenRole,
       token: token,
     });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
+const sigout = async (req, res) => {
+  try {
+    fs.writeFileSync("src/current-active/token.txt", "");
+    await order.destroy({
+      truncate: true,
+    });
+    return res.status(200).send({ message: "sigout success...!" });
   } catch (error) {
     return res.status(500).send({ message: error.message });
   }
@@ -58,6 +75,8 @@ const getByUsername = async (req, res) => {
     const result = await user.findOne({
       where: { username: req.params.username },
     });
+    if (!result)
+      return res.status(400).send({ message: "username not found...!" });
     return res.status(200).send({ product: result });
   } catch (error) {
     return res.status(500).send({ message: error.message });
@@ -66,11 +85,18 @@ const getByUsername = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
+    const { firstname, lastname, email, username, password } = req.body;
     await user.update(
-      { username: req.body.username },
+      {
+        firstname: firstname,
+        lastname: lastname,
+        email: email,
+        username: username,
+        password: bcrypt.hashSync(password, 8),
+      },
       { where: { username: req.params.username } }
     );
-    return res.status(200).send({ message: "updated username...!" });
+    return res.status(200).send({ message: "success updated...!" });
   } catch (error) {
     return res.status(500).send({ message: error.message });
   }
@@ -150,9 +176,26 @@ const updateProduct = async (req, res) => {
 
 const delProduct = async (req, res) => {
   try {
+    console.log(req.body.name);
     await product.destroy({
       where: { name: req.body.name },
     });
+    return res.status(200).send(`${req.body.name} has been deleted...!`);
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
+// ------------------------------------------------------------------------------
+
+const orderProduct = async (req, res) => {
+  try {
+    const { name, quantity } = req.body;
+    await order.create({
+      name: name,
+      quantity: quantity + 10,
+    });
+    return res.status(200).send({ message: `${name} has been order...!` });
   } catch (error) {
     return res.status(500).send({ message: error.message });
   }
@@ -160,6 +203,7 @@ const delProduct = async (req, res) => {
 
 module.exports = {
   login,
+  sigout,
   createUser,
   getAllUser,
   getByUsername,
@@ -170,4 +214,5 @@ module.exports = {
   getProductById,
   updateProduct,
   delProduct,
+  orderProduct,
 };

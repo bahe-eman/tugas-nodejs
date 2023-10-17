@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const validator = require("validator");
-const { user, product } = require("../models");
+const { user, product, order } = require("../models");
 
 const validateLogin = async (req, res, next) => {
   try {
@@ -17,7 +17,7 @@ const validateLogin = async (req, res, next) => {
     if (!isValidPasswor)
       return res.status(400).send({ message: "invalid password...!" });
 
-    // res.dataUser = getUser.dataValues;
+    req.dataUser = getUser.dataValues;
     next();
   } catch (error) {
     return res
@@ -35,7 +35,7 @@ const validateCreateUser = async (req, res, next) => {
     const { firstname, email, username, password } = req.body;
 
     if (!firstname || !email || !username || !password)
-      res.status(401).send({ message: "some field is missing...!" });
+      return res.status(401).send({ message: "some field is missing...!" });
 
     if (
       (await user.findOne({ where: { email: email } })) ||
@@ -48,7 +48,6 @@ const validateCreateUser = async (req, res, next) => {
     const validEmail = validator.isEmail(email);
     if (!validEmail)
       return res.status(500).send({ message: "email is invalid...!" });
-    console.log(validEmail);
 
     const strongPassword = validator.isStrongPassword(password);
     if (!strongPassword)
@@ -66,23 +65,87 @@ const validateCreateUser = async (req, res, next) => {
 
 const validateUpdateUser = async (req, res, next) => {
   try {
+    const { firstname, lastname, email, username, password } = req.body;
+
+    if (!firstname || !email || !username || !password)
+      return res.status(401).send({ message: "some field is missing...!" });
+
     if (!(req.currenRole.toLowerCase() == "admin"))
       return res
         .status(500)
         .send({ message: "access denial, you are not admin...!" });
+
+    if (
+      !(await user.findOne({
+        where: { username: req.params.username },
+      }))
+    )
+      return res
+        .status(400)
+        .send({ message: `${req.params.username} not found...!` });
+
     if (
       req.params.username.toLowerCase() == "admin" ||
-      req.body.username.toLowerCase() == "admin"
+      username.toLowerCase() == "admin"
     )
       return res.status(401).send({
         message: "cant change username: admin...!",
       });
+
+    if (await user.findOne({ where: { username: username } }))
+      return res.status(401).send({ message: `${username} has been used...!` });
+    if (await user.findOne({ where: { email: email } }))
+      return res.status(401).send({ message: `${email} has been used...!` });
+
+    const validEmail = validator.isEmail(email);
+    if (!validEmail)
+      return res
+        .status(500)
+        .send({ message: "email is invalid, failed update...!" });
+
+    const strongPassword = validator.isStrongPassword(password);
+    if (!strongPassword)
+      return res
+        .status(400)
+        .send({ message: "password is not strong, failed update user...!" });
+
     next();
   } catch (error) {
     return res.status(500).send({ message: error.message });
   }
 };
 
+const validateDeleteUser = async (req, res, next) => {
+  try {
+    const { username } = req.body;
+    if (!(req.currenRole.toLowerCase() == "admin"))
+      return res
+        .status(500)
+        .send({ message: "access denial, you are not admin...!" });
+
+    if (!(await user.findOne({ where: { username: username } })))
+      return res.status(400).send({ message: `${username} not found...!` });
+
+    const getUser = await user.findOne({
+      where: { username: username },
+    });
+    if (getUser.dataValues.role == "admin")
+      return res
+        .status(401)
+        .send({ message: "cant delete admin, delete failed...!" });
+
+    const isTrue = await user.findOne({
+      where: { username: username },
+    });
+    if (!isTrue)
+      return res.status(404).send({ message: `${username} is not found...!` });
+
+    next();
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+// ---------------------------------------------------------------------------------------------
 const validateAddProduct = async (req, res, next) => {
   try {
     const { name, price, image, description } = req.body;
@@ -90,6 +153,7 @@ const validateAddProduct = async (req, res, next) => {
       return res
         .status(500)
         .send({ message: "access denial, you are not admin...!" });
+
     if (!name || !price || !image || !description)
       return res.status(401).send({ message: "some field is missing...!" });
 
@@ -107,14 +171,18 @@ const validateUpdatePoduct = async (req, res, next) => {
   try {
     const { name, price, image, description } = req.body;
     const { id } = req.params;
+
     if (!(req.currenRole.toLowerCase() == "admin"))
       return res
         .status(500)
         .send({ message: "access denial, you are not admin...!" });
+
     if (!name || !price || !image || !description)
       return res.status(401).send({ message: "some field is missing...!" });
+
     if (!(await product.findOne({ where: { id: id } })))
       return res.status(400).send({ message: `product is not found...!` });
+
     if (await product.findOne({ where: { name: name } }))
       return res.status(400).send({ message: `${name} has used...!` });
 
@@ -127,18 +195,32 @@ const validateUpdatePoduct = async (req, res, next) => {
   }
 };
 
-const validateDelUser = async (req, res, next) => {
+const validateDeleteProduct = async (req, res, next) => {
   try {
-    const { username } = req.body;
     if (!(req.currenRole.toLowerCase() == "admin"))
       return res
         .status(500)
         .send({ message: "access denial, you are not admin...!" });
-    const isTrue = await user.findOne({
-      where: { username: username },
-    });
-    if (!isTrue)
-      return res.status(404).send({ message: `${username} is not found...!` });
+    if (
+      !(await product.findOne({
+        where: { name: req.body.name },
+      }))
+    )
+      return res.status(400).send({ message: "product not found...!" });
+    next();
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+// ------------------------------------------------------------------------------------
+const validateOrderProduct = async (req, res, next) => {
+  try {
+    const { name, quantity } = req.body;
+    if (!name)
+      return res.status(401).send({ message: "some field is missing...!" });
+
+    if (!(await product.findOne({ where: { name: name } })))
+      return res.status(400).send({ message: "product not found...!" });
 
     next();
   } catch (error) {
@@ -151,6 +233,8 @@ module.exports = {
   validateLogin,
   validateAddProduct,
   validateUpdatePoduct,
-  validateDelUser,
+  validateDeleteUser,
   validateUpdateUser,
+  validateDeleteProduct,
+  validateOrderProduct,
 };
