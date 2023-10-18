@@ -64,7 +64,7 @@ const createUser = async (req, res) => {
 const getAllUser = async (req, res) => {
   try {
     const allUser = await user.findAll();
-    return res.status(200).send({ users: allUser });
+    return res.status(200).send({ allUser });
   } catch (error) {
     return res.status(500).send({ message: error.message });
   }

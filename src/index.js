@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 require("dotenv").config();
 const { sequelize } = require("./models");
 
@@ -17,6 +18,7 @@ sequelize
     console.log("connection error", error);
   });
 
+app.use(cors({ origin: true }));
 app.use(express.json());
 app.use("/", router);
 
